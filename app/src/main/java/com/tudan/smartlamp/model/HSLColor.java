@@ -15,19 +15,6 @@ public class HSLColor {
         this.lightness = lightness;
     }
 
-    /**
-     * Constructor when using Integer values, saturation and lightness in range of 0..100
-     *
-     * @param hue        Hue 0..360
-     * @param saturation Saturation 0..100 converted to 0..1
-     * @param lightness  Lightness 0..100 converted to 0..1
-     */
-    public HSLColor(int hue, int saturation, int lightness) {
-        this.hue = hue;
-        this.saturation = saturation / 100f;
-        this.lightness = lightness / 100f;
-    }
-
     public float getHue() {
         return hue;
     }
@@ -44,15 +31,6 @@ public class HSLColor {
         this.saturation = saturation;
     }
 
-    /**
-     * Saturation setter using Integer value
-     *
-     * @param saturation Saturation range 0..100 converted to 0..1
-     */
-    public void setSaturation(int saturation) {
-        this.saturation = saturation / 100f;
-    }
-
     public float getLightness() {
         return lightness;
     }
@@ -61,33 +39,10 @@ public class HSLColor {
         this.lightness = lightness;
     }
 
-    /**
-     * Lightness setter using Integer value
-     *
-     * @param lightness Lightness range 0..100 converted to 0..1
-     */
-    public void setLightness(int lightness) {
-        this.lightness = lightness / 100f;
-    }
-
     public HSLColor update(float hue, float saturation, float lightness) {
         this.hue = hue;
         this.saturation = saturation;
         this.lightness = lightness;
-        return this;
-    }
-
-    /**
-     * Update using Integer values, saturation and lightness in range of 0..100
-     *
-     * @param hue        Hue 0..360
-     * @param saturation Saturation 0..100 converted to 0..1
-     * @param lightness  Lightness 0..100 converted to 0..1
-     */
-    public HSLColor update(int hue, int saturation, int lightness) {
-        this.hue = hue;
-        this.saturation = saturation / 100f;
-        this.lightness = lightness / 100f;
         return this;
     }
 }

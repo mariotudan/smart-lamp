@@ -1,77 +1,47 @@
 package com.tudan.smartlamp;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.SeekBar;
+import android.view.MotionEvent;
+import android.view.WindowManager;
 import android.widget.TextView;
 
-import com.jakewharton.rxbinding2.view.RxView;
+import com.tudan.smartlamp.model.Coordinate;
 import com.tudan.smartlamp.model.HSLColor;
+import com.tudan.smartlamp.service.BluetoothService;
+import com.tudan.smartlamp.utils.DisposableUtils;
 
 import java.util.concurrent.TimeUnit;
 
-import app.akexorcist.bluetotohspp.library.BluetoothSPP;
-import app.akexorcist.bluetotohspp.library.BluetoothState;
-import app.akexorcist.bluetotohspp.library.DeviceList;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiConsumer;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function3;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
-    @BindView(R.id.seekBarHue)
-    SeekBar hueSlider;
-    @BindView(R.id.seekBarSaturation)
-    SeekBar saturationSlider;
-    @BindView(R.id.seekBarLightness)
-    SeekBar lightnessSlider;
+    @BindView(R.id.colorBackground)
+    TextView colorBackground;
+    @BindView(R.id.whiteGradientBackground)
+    TextView whiteGradientBackground;
+    @BindView(R.id.bulbLight)
+    TextView bulbLight;
 
-    @BindView(R.id.colorView)
-    TextView colorView;
-    @BindView(R.id.btnPickDevice)
-    Button btnPickDevice;
+    @BindView(R.id.layout)
+    ConstraintLayout layout;
 
-    @BindView(R.id.btnUpdateColor)
-    Button btnUpdateColor;
 
     CompositeDisposable disposables;
-    HSLColor hslColor = new HSLColor(0, 100, 50);
-    int color = ColorUtils.HSLToColor(new float[]{hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()});
+    HSLColor hslColor = new HSLColor(0, 1, 0.5f);
+    int intColor = ColorUtils.HSLToColor(new float[]{hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()});
 
-    BluetoothSPP bt;
-
-    final int[] rgbFix = new int[]{
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
-            2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5,
-            5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10,
-            10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
-            17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
-            25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-            37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
-            51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
-            69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
-            90, 92, 93, 95, 96, 98, 99, 101, 102, 104, 105, 107, 109, 110, 112, 114,
-            115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137, 138, 140, 142,
-            144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
-            177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
-            215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +49,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        bt = new BluetoothSPP(this);
+        setBackgroundColor();
+
+        colorBackground.setScaleX(1.7f);
+        bulbLight.setScaleX(2f);
+        whiteGradientBackground.setScaleY(1.7f);
+
+        GradientDrawable whiteGradient = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.argb(120, 255, 255, 255), Color.TRANSPARENT, Color.TRANSPARENT});
+        whiteGradientBackground.setBackground(whiteGradient);
+
+        GradientDrawable bulbLightGradient = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{Color.WHITE, Color.TRANSPARENT});
+        bulbLightGradient.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        bulbLightGradient.setCornerRadius(5);
+        bulbLightGradient.setGradientRadius(70);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
     }
 
     @Override
@@ -88,84 +75,51 @@ public class MainActivity extends AppCompatActivity {
 
         disposables = new CompositeDisposable();
 
-        disposables.add(Observable.combineLatest(
-                seekBarChangeObservable(hueSlider).startWith(0),
-                seekBarChangeObservable(saturationSlider).startWith(100),
-                seekBarChangeObservable(lightnessSlider).startWith(50),
-                (Function3<Integer, Integer, Integer, HSLColor>) (hue, saturation, lightness) -> hslColor.update(hue, saturation, lightness)
-        ).debounce(20, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<HSLColor>() {
-                    @Override
-                    public void accept(HSLColor hslColor) throws Exception {
-                        color = ColorUtils.HSLToColor(new float[]{hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()});
-                        colorView.setBackgroundColor(color);
-                        Log.d("Color", String.format("%f, %f, %f", hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()));
+        BluetoothService.setupBluetooth();
+
+        disposables.add(Observable.create((ObservableEmitter<Coordinate> e) -> {
+            layout.setOnTouchListener((v, event) -> {
+                final int action = event.getAction();
+                switch (action & MotionEvent.ACTION_MASK) {
+                    case MotionEvent.ACTION_DOWN:
+                        // to be filtered as too big movement
+                        e.onNext(new Coordinate(100000, 100000));
+                    case MotionEvent.ACTION_MOVE: {
+                        e.onNext(new Coordinate(event.getX(), event.getY()));
+                        break;
                     }
-                }));
+                }
+                return true;
+            });
+            e.setDisposable(DisposableUtils.getDisposable(i -> layout.setOnTouchListener(null)));
+        }).buffer(2, 1)
+                .map((coords) -> new Coordinate(coords.get(1).getX() - coords.get(0).getX(), coords.get(1).getY() - coords.get(0).getY()))
+                .filter(coordinate -> coordinate.getX() < 10000 && coordinate.getX() > -10000) // filtering touch down as too big movement
+                .doOnNext(coord -> {
+                    if (Math.abs(coord.getX()) > Math.abs(coord.getY())) coord.setY(0);
+                    else coord.setX(0);
+                })
+                .debounce(20, TimeUnit.MILLISECONDS)
+                .map(movement -> {
+                    float hue = hslColor.getHue();
+                    hue -= movement.getX() * 0.2f;
+                    hue = (hue + 360) % 360;
+                    hslColor.setHue(hue);
 
-        disposables.add(RxView.clicks(btnPickDevice).subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(o -> {
-                    bt.setupService();
-                    bt.startService(BluetoothState.DEVICE_OTHER);
-
-                    Intent intent = new Intent(getApplicationContext(), DeviceList.class);
-                    startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
-                }));
-
-        disposables.add(RxView.clicks(btnUpdateColor)
+                    float lightness = hslColor.getLightness();
+                    lightness += movement.getY() * 0.0006f;
+                    lightness = Math.min(1f, Math.max(0.5f, lightness));
+                    hslColor.setLightness(lightness);
+                    return hslColor;
+                })
                 .observeOn(AndroidSchedulers.mainThread())
-                .map(o -> color)
-                .doOnNext(color -> Log.d("BLUETOOTH UPDATE COLOR", String.format("%f, %f, %f", hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness())))
-                .subscribe(color -> {
-                    int red = Color.red(color);
-                    int green = Color.green(color);
-                    int blue = Color.blue(color);
-                    red = rgbFix[red];
-                    green = rgbFix[green];
-                    blue = rgbFix[blue];
-
-                    red = Math.min(red * 2, 255);
-                    green = Math.min((int) (green * 0.5f), 255);
-                    blue = Math.min((int) (blue * 0.3f), 255);
-
-                    String text = String.format("%03d%03d%03d", red, green, blue);
-                    Log.d("BLUETOOTH COLOR", text);
-                    bt.send(text, false);
-                }));
-    }
-
-    private Observable seekBarChangeObservable(final SeekBar seekBar) {
-        return Observable.create((ObservableEmitter<Integer> emitter) -> {
-            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int value, boolean b) {
-                    emitter.onNext(value);
-                }
-
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-
-                }
-
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-
-                }
-            });
-            emitter.setDisposable(new Disposable() {
-                @Override
-                public void dispose() {
-                    seekBar.setOnSeekBarChangeListener(null);
-                }
-
-                @Override
-                public boolean isDisposed() {
-                    return false;
-                }
-            });
-        });
-
+                .doOnNext(hslColor -> {
+                    setBackgroundColor();
+                    //Log.d("Color", String.format("%f, %f, %f", hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()));
+                })
+                .observeOn(Schedulers.single())
+                .debounce(500, TimeUnit.MILLISECONDS)
+                .subscribe(hslColor -> BluetoothService.sendColorBT(intColor)));
     }
 
     @Override
@@ -174,19 +128,12 @@ public class MainActivity extends AppCompatActivity {
         disposables.dispose();
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
-            if (resultCode == Activity.RESULT_OK) {
-                bt.connect(data);
-            }
-        } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
-            if (resultCode == Activity.RESULT_OK) {
-                bt.setupService();
-                bt.startService(BluetoothState.DEVICE_OTHER);
-            } else {
-                // Do something if user doesn't choose any device (Pressed back)
-            }
-        }
+    private void setBackgroundColor() {
+        intColor = ColorUtils.HSLToColor(new float[]{hslColor.getHue(), hslColor.getSaturation(), hslColor.getLightness()});
+        int colorLeft = ColorUtils.HSLToColor(new float[]{(hslColor.getHue() - 20 + 360) % 360, hslColor.getSaturation(), hslColor.getLightness()});
+        int colorRight = ColorUtils.HSLToColor(new float[]{(hslColor.getHue() + 20 + 360) % 360, hslColor.getSaturation(), hslColor.getLightness()});
+        GradientDrawable gradient = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{colorLeft, intColor, intColor, colorRight});
+        colorBackground.setBackground(gradient);
     }
 }
