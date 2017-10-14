@@ -4,13 +4,15 @@ package com.tudan.smartlamp.model;
  * Created by mario on 11.10.2017..
  */
 
-public class Coordinate {
+public class TouchCoordinate {
     private float x;
     private float y;
+    private boolean dualTouch;
 
-    public Coordinate(float x, float y) {
+    public TouchCoordinate(float x, float y, boolean dualTouch) {
         this.x = x;
         this.y = y;
+        this.dualTouch = dualTouch;
     }
 
     public float getX() {
@@ -27,5 +29,13 @@ public class Coordinate {
 
     public void setY(float y) {
         this.y = y;
+    }
+
+    public boolean isDualTouch() {
+        return dualTouch;
+    }
+
+    public void setDualTouch(boolean dualTouch) {
+        this.dualTouch = dualTouch;
     }
 }

@@ -1,5 +1,7 @@
 package com.tudan.smartlamp.utils;
 
+import android.util.Log;
+
 import com.tudan.smartlamp.model.RGBColor;
 
 /**
@@ -7,18 +9,31 @@ import com.tudan.smartlamp.model.RGBColor;
  */
 
 public class RGBEyeFix {
-    public static void fixColor(RGBColor rgbColor){
-        int red = RGBEyeFix.map[rgbColor.getRed()];
-        int green = RGBEyeFix.map[rgbColor.getGreen()];
-        int blue = RGBEyeFix.map[rgbColor.getBlue()];
-
-        red = Math.min(red * 2, 255);
-        green = Math.min((int) (green * 0.5f), 255);
-        blue = Math.min((int) (blue * 0.3f), 255);
+    public static void fixColor(RGBColor rgbColor) {
+        int red = map[rgbColor.getRed()];
+        int green = map[rgbColor.getGreen()];
+        int blue = map[rgbColor.getBlue()];
 
         rgbColor.setRed(red);
         rgbColor.setGreen(green);
         rgbColor.setBlue(blue);
+    }
+
+    public static void reverseFixedColor(RGBColor rgbColor) {
+        int red = getReverseMapColor(rgbColor.getRed());
+        int green = getReverseMapColor(rgbColor.getGreen());
+        int blue = getReverseMapColor(rgbColor.getBlue());
+
+        rgbColor.setRed(red);
+        rgbColor.setGreen(green);
+        rgbColor.setBlue(blue);
+    }
+
+    private static int getReverseMapColor(int color) {
+        if (reverseMap[color] != -1 && color != 0) {
+            return reverseMap[color];
+        }
+        return color;
     }
 
     public static final int[] map = new int[]{
@@ -38,4 +53,14 @@ public class RGBEyeFix {
             144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
             177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
             215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255};
+
+    public static int[] reverseMap = new int[256];
+
+    static {
+        for (int i = 0; i < 256; i++) reverseMap[i] = -1;
+        for (int index = 0; index < 256; index++) {
+            int value = map[index];
+            reverseMap[value] = index;
+        }
+    }
 }

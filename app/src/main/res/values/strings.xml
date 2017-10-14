@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">SmartLamp</string>
+    <string name="app_name">Smart Lamp</string>
+    <string name="connecting_to_smart_lamp">Connecting to Smart Lamp…</string>
+    <string name="connected_to_smart_lamp">Connected to Smart Lamp</string>
 </resources>

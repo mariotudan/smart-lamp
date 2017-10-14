@@ -46,5 +46,11 @@ public class RGBColor {
     public void setBlue(int blue) {
         this.blue = blue;
     }
+
+    public void adjustBrightness(float brightness){
+        this.red = (int)(red * brightness);
+        this.green = (int)(green * brightness);
+        this.blue = (int)(blue * brightness);
+    }
 }
 
