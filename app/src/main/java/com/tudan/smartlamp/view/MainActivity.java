@@ -119,6 +119,7 @@ public class MainActivity extends AppCompatActivity implements ColorPickerView {
             });
             e.setDisposable(DisposableUtils.getDisposable(i -> layout.setOnTouchListener(null)));
         })
+                .observeOn(Schedulers.computation())
                 .buffer(2, 1)
                 .map((coords) -> {
                     TouchCoordinate coord1 = coords.get(0);
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements ColorPickerView {
                     if (Math.abs(coord.getX()) > Math.abs(coord.getY())) coord.setY(0);
                     else coord.setX(0);
                 })
-                .debounce(20, TimeUnit.MILLISECONDS)
+                .throttleFirst(20, TimeUnit.MILLISECONDS)
                 .map(movement -> {
                     if (movement.isDualTouch()) {
                         brightness -= movement.getY() * 0.001f;
@@ -150,10 +151,11 @@ public class MainActivity extends AppCompatActivity implements ColorPickerView {
                     return hslColor;
                 })
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(hslColor -> {
-                    setBackgroundColor();
-                })
+                .doOnNext(hslColor -> setBackgroundColor())
                 .observeOn(Schedulers.single())
+                .flatMap(hslColor -> Observable.interval(0, 2500, TimeUnit.MILLISECONDS)
+                        .take(2)
+                        .map(ignored -> hslColor))
                 .debounce(1000, TimeUnit.MILLISECONDS)
                 .subscribe(hslColor -> {
                     RGBColor rgbColor = new RGBColor(intColor);
